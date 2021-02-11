@@ -26,6 +26,31 @@ class ChatUser {
     }
   }
 
+  /** list members: list members of room user is in, send members */
+
+  sendMembers(){
+    const members = [...this.room.members].map((val) => val.name);
+    this.send(JSON.stringify({
+      type: 'info',
+      data: members
+    }));
+  }
+
+  sendPrivateMessage(text){
+    const userName = text.split(" ")[1];
+    text = text.replace(`/priv ${userName}`, "");
+    
+    for(let member of this.room.members){
+      if(member.name === userName){
+        member.send(JSON.stringify({
+          name: this.name,
+          type: 'chat',
+          text: text
+        }))
+      }
+    }
+  }
+
   /** handle joining: add to room members, announce join */
 
   handleJoin(name) {
@@ -51,6 +76,7 @@ class ChatUser {
    *
    * - {type: "join", name: username} : join
    * - {type: "chat", text: msg }     : chat
+   *   {type: "members" }     : members
    */
 
   handleMessage(jsonData) {
@@ -58,6 +84,8 @@ class ChatUser {
 
     if (msg.type === 'join') this.handleJoin(msg.name);
     else if (msg.type === 'chat') this.handleChat(msg.text);
+    else if (msg.type === 'members') this.sendMembers();
+    else if (msg.type === 'pm') this.sendPrivateMessage(msg.text);
     else throw new Error(`bad message: ${msg.type}`);
   }
 
